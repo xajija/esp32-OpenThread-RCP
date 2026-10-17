@@ -8,12 +8,12 @@ on:
     inputs:
       idf_version:
         description: ESP-IDF docker tag
-        default: v5.4.2
+        default: v5.5.5
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: espressif/idf:${{ inputs.idf_version || 'v5.4.2' }}
+    container: espressif/idf:${{ inputs.idf_version || 'v5.5.5' }}
     steps:
       - name: Build ot_rcp for esp32c6 (USB-Serial/JTAG)
         shell: bash
@@ -30,6 +30,7 @@ jobs:
           idf.py set-target esp32c6
           idf.py build
           grep -E "OPENTHREAD_RCP_|ESP_CONSOLE" sdkconfig | tee "$GITHUB_WORKSPACE/sdkconfig-summary.txt"
+          grep -q '^CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG=y' sdkconfig || { echo "USB RCP option not applied"; exit 1; }
           idf.py merge-bin -o "$GITHUB_WORKSPACE/ot_rcp_esp32c6_usb.bin"
           echo "Flash at 0x0: esptool --chip esp32c6 write-flash 0x0 ot_rcp_esp32c6_usb.bin" > "$GITHUB_WORKSPACE/FLASH.txt"
       - uses: actions/upload-artifact@v4
